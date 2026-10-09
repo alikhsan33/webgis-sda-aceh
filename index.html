@@ -30,7 +30,7 @@ button.secondary{background:#e2e8f0;color:#0f172a}button.full{width:100%;margin-
 .result .val{font-weight:650;overflow-wrap:anywhere}
 .status{font-size:12px;color:var(--muted);margin-top:6px;min-height:17px}
 .legend{font-size:11px;color:#475569}
-.leaflet-popup-content{font-size:13px;line-height:1.5}
+.leaflet-popup-content{font-size:13px;line-height:1.45;margin:12px 14px;min-width:220px;max-width:290px}.popup-title{font-weight:750;font-size:15px;margin:0 0 8px;color:#0f766e}.popup-row{padding:7px 0;border-bottom:1px solid #e8eef2}.popup-row:last-child{border-bottom:0}.popup-key{display:block;font-size:11px;color:#64748b;margin-bottom:2px}.popup-val{display:block;font-weight:650;color:#102a2a;overflow-wrap:anywhere}
 @media(max-width:760px){
  .app{display:flex;flex-direction:column}
  #map{order:1;height:56vh;min-height:350px}
@@ -154,7 +154,10 @@ function doCheck(lat,lon,source){
  map.setView([lat,lon],Math.max(map.getZoom(),10));
  const ws=uniqueNames(featuresAtPoint('ws',pt));
  const das=uniqueNames(featuresAtPoint('das',pt));
- const kab=uniqueNames(featuresAtPoint('kabupaten',pt));
+ const kabFeatures=featuresAtPoint('kabupaten',pt);
+ const kab=uniqueNames(kabFeatures);
+ // Jika titik tepat di batas atau geometri administrasi bertampalan, jangan menyatakan satu kabupaten secara pasti.
+ const kabText=kab.length===0?'Tidak ditemukan di batas kabupaten':kab.length===1?kab[0]:'Perlu verifikasi batas: '+kab.join('; ');
  const sb=nearestLineName(pt,data.sungai_besar,3); // polygon layer gets nearest-feature handling below
  const child=nearestLineName(pt,data.anak_sungai,3);
  const sbNear=nearestPolygonName(pt,data.sungai_besar,3);
@@ -164,14 +167,22 @@ function doCheck(lat,lon,source){
  const html=[
  ['Wilayah Sungai',ws.length?ws.join('; '):'Tidak ditemukan di poligon WS'],
  ['DAS',das.length?das.join('; '):'Tidak ditemukan di poligon DAS'],
- ['Kabupaten/Kota',kab.length?kab.join('; '):'Tidak ditemukan di batas kabupaten'],
+ ['Kabupaten/Kota',kabText],
  ['Sungai terdekat',riverText],
  ['Jenis data sungai',river?riverType:'—'],
  ['Koordinat',lat.toFixed(6)+', '+lon.toFixed(6)]
  ].map(([k,v])=>'<div class="row"><span class="key">'+esc(k)+'</span><span class="val">'+esc(v)+'</span></div>').join('');
  document.getElementById('result').innerHTML=html;
- marker.bindPopup('<b>Hasil Identifikasi</b><br>'+html,{maxWidth:320}).openPopup();
- lastText=[`Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`,`Wilayah Sungai: ${ws.join('; ')||'Tidak ditemukan'}`,`DAS: ${das.join('; ')||'Tidak ditemukan'}`,`Kabupaten/Kota: ${kab.join('; ')||'Tidak ditemukan'}`,`Sungai terdekat: ${riverText}`].join('\n');
+ const popupHtml='<div class="popup-title">Hasil Identifikasi</div>'+[
+ ['Wilayah Sungai',ws.length?ws.join('; '):'Tidak ditemukan di poligon WS'],
+ ['Daerah Aliran Sungai',das.length?das.join('; '):'Tidak ditemukan di poligon DAS'],
+ ['Kabupaten/Kota',kabText],
+ ['Sungai terdekat',riverText],
+ ['Jenis data sungai',river?riverType:'—'],
+ ['Koordinat',lat.toFixed(6)+', '+lon.toFixed(6)]
+ ].map(([k,v])=>'<div class="popup-row"><span class="popup-key">'+esc(k)+'</span><span class="popup-val">'+esc(v)+'</span></div>').join('');
+ marker.bindPopup(popupHtml,{maxWidth:320}).openPopup();
+ lastText=[`Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`,`Wilayah Sungai: ${ws.join('; ')||'Tidak ditemukan'}`,`DAS: ${das.join('; ')||'Tidak ditemukan'}`,`Kabupaten/Kota: ${kabText}`,`Sungai terdekat: ${riverText}`].join('\n');
  document.getElementById('status').textContent='Pengecekan selesai'+(source?' ('+source+')':'')+'.';
 }
 function nearestPolygonName(pt,fc,maxKm){
