@@ -109,7 +109,7 @@ async function loadLayers(){
     layers[key]=L.geoJSON(data[key],{
       style:()=>styleFor(key),
       pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:4,...styleFor(key)}),
-      onEachFeature:(f,l)=>l.bindPopup('<b>'+esc(propsName(f))+'</b><br>'+esc(label))
+      onEachFeature:(f,l)=>l.on('click',e=>{L.DomEvent.stopPropagation(e);doCheck(e.latlng.lat,e.latlng.lng,'klik peta');})
     });
     if(document.getElementById(checkId).checked) layers[key].addTo(map);
     const b=layers[key].getBounds(); if(b.isValid()) bounds.push(b);
@@ -150,7 +150,7 @@ function doCheck(lat,lon,source){
  document.getElementById('lat').value=lat;document.getElementById('lon').value=lon;
  const pt=turf.point([lon,lat]);picked={lat,lon};
  if(marker) marker.remove();
- marker=L.marker([lat,lon]).addTo(map).bindPopup('Titik pilihan<br>'+lat.toFixed(6)+', '+lon.toFixed(6)).openPopup();
+ marker=L.marker([lat,lon]).addTo(map);
  map.setView([lat,lon],Math.max(map.getZoom(),10));
  const ws=uniqueNames(featuresAtPoint('ws',pt));
  const das=uniqueNames(featuresAtPoint('das',pt));
@@ -170,6 +170,7 @@ function doCheck(lat,lon,source){
  ['Koordinat',lat.toFixed(6)+', '+lon.toFixed(6)]
  ].map(([k,v])=>'<div class="row"><span class="key">'+esc(k)+'</span><span class="val">'+esc(v)+'</span></div>').join('');
  document.getElementById('result').innerHTML=html;
+ marker.bindPopup('<b>Hasil Identifikasi</b><br>'+html,{maxWidth:320}).openPopup();
  lastText=[`Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`,`Wilayah Sungai: ${ws.join('; ')||'Tidak ditemukan'}`,`DAS: ${das.join('; ')||'Tidak ditemukan'}`,`Kabupaten/Kota: ${kab.join('; ')||'Tidak ditemukan'}`,`Sungai terdekat: ${riverText}`].join('\n');
  document.getElementById('status').textContent='Pengecekan selesai'+(source?' ('+source+')':'')+'.';
 }
